@@ -1,0 +1,99 @@
+---
+title: "analysis of smart device usage"
+author: "yunjing huang"
+date: "September 9, 2021"
+output: html_document
+---
+![ ](https://mk0bellabeatcomhqlip.kinstacdn.com/wp-content/uploads/2020/10/bb_31.jpg)
+
+## Ask
+1. What are some trends in smart device usage?
+2. How could these trends apply to Bellabeat customers?
+3. How could these trends help influence Bellabeat marketing strategy?
+
+## Prepare
+For this analysis we use an open source dataset avalible on kaggle.[link](https://www.kaggle.com/arashnic/fitbit). There are 18 csv files in the datasets. After carefully check the dataset we decide to use the dailyActivity_merged.csv,sleepDay_merged.csv and dailyCalories_merged.csv. 
+```{r warning=FALSE}
+library(tidyverse)
+daily_activity <- read.csv("D:/FitabaseData/dailyActivity_merged.csv")
+head(daily_activity)
+sleep_day <- read.csv("D:/FitabaseData/sleepDay_merged.csv")
+head(sleep_day)
+daily_calories <- read.csv("D:/FitabaseData/dailyCalories_merged.csv")
+head(daily_calories)
+```
+## Process
+in dataframe sleep_day the column sleepDay is in datatime format. we convert the datatime format to data format to be consistent with the other two dataframes.
+```{r warning=FALSE}
+sleep_day$SleepDay = as.Date(sleep_day$SleepDay, format = "%m/%d/%Y %I:%M:%S %p")
+head(sleep_day)
+```
+We rename the column sleepDay to ActivityDate in dataframe sleep_day. rename the column ActivityDay to ActivityDate. We then convert the column ActivityDate to %Y-%m-%d format. After that we convert the column ActivityDay in dataframe daily_calories to %Y-%m-%d format and rename the column ActivityDay to ActivityDate.
+The three dataframe has consistent data format after these operation.
+```{r warning=FALSE}
+sleep_day<-sleep_day%>% rename(ActivityDate=SleepDay)
+head(sleep_day)
+daily_activity$ActivityDate = as.Date(format(daily_activity$ActivityDate), "%m/%d/%Y")
+head(daily_activity)
+daily_calories$ActivityDay = as.Date(daily_calories$ActivityDay, format = "%m/%d/%Y")
+daily_calories<-daily_calories%>% rename(ActivityDate=ActivityDay)
+head(daily_calories)
+```
+merge the three dataframe into a final dataframe and select only the columns we are interested.
+```{r warning=FALSE}
+final_data <- merge(daily_activity,sleep_day,daily_calories,by.x=c("Id","ActivityDate"),by.y=c("Id","ActivityDate"),by.z=c("Id","ActivityDate"))
+head(final_data)
+data<-final_data%>%select(Id,ActivityDate,TotalSteps,TotalDistance,VeryActiveMinutes,Calories,TotalMinutesAsleep)
+head(data)
+```
+## Analyze
+first we check the relationships between TotalSteps and TotalMinutesAsleep
+```{r warning=FALSE}
+ggplot(data=data)+geom_smooth(mapping=aes(x=TotalSteps,y=TotalMinutesAsleep,color=Id))+facet_wrap(~Id)+labs(title="totalsteps vs sleep times")
+```
+
+these graphs show that there are no clear relationship between totalsteps and sleeptimes. There are some peaks and valleys in the plots. Indicate apropriate execies is helpful for some people.
+
+```{r warning=FALSE}
+ggplot(data=daily_activity)+geom_bar(mapping=aes(x=ActivityDate))+facet_wrap(~Id)+labs(title="how often people check their daily activity")
+ggplot(data=sleep_day)+geom_bar(mapping=aes(x=ActivityDate))+facet_wrap(~Id)+labs(title="how often people check their sleeping tims")
+```
+
+From the results we can clearly see that people are prefer the use devices to check their daily activities than to check their sleeping times as more user stop report their sleeping times than user stop report daily activities.
+
+```{r warning=FALSE}
+daily_activity$dayOfWeek<-weekdays(as.Date(daily_activity$ActivityDate))
+head(daily_activity)
+ggplot(data=daily_activity)+geom_bar(mapping=aes(x=dayOfWeek))
+```
+
+the graph shows that people are more likely to record excierse on Tuesday, Wednesday and Thursday. 
+
+```{r warning=FALSE}
+sleep_day$dayOfWeek<-weekdays(as.Date(sleep_day$ActivityDate))
+head(sleep_day)
+ggplot(data=sleep_day)+geom_bar(mapping=aes(x=dayOfWeek))
+```
+
+the graph shows that people are more likely to record sleeping times on Tuesday, Wednesday and Thursday.
+
+```{r}
+ggplot(data=daily_activity)+geom_boxplot(mapping=aes(x=dayOfWeek,y=TotalSteps))
+ggplot(data=sleep_day)+geom_boxplot(mapping=aes(x=dayOfWeek,y=TotalMinutesAsleep))
+```
+
+these graphs shows that people record less activity and longer sleeping times on weekend.
+
+## Share
+from the resuts above we can see  
+
+* people are more likely to quite recording their sleeping times than activities.
+
+* people are more likely to record excierse on Tuesday, Wednesday and Thursday.
+
+From the analysis I make below suggestions.
+
+* Emphasize more on activity record in advertise and products design.
+
+Thanks google for provide me this oportunity to do this analysis. 
+Thanks Mobius for share this dataset.
